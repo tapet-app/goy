@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goy or Jew?</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Start Screen -->
+  <div id="start-screen" class="screen active">
+    <h1>Goy or Jew?</h1>
+    <p class="subtitle">Can you tell the difference?</p>
+    <button id="btn-play" class="btn btn-play">Play</button>
+  </div>
+
+  <!-- Round Screen -->
+  <div id="round-screen" class="screen">
+    <p id="round-counter" class="round-counter">1 / 10</p>
+    <div class="photo-card">
+      <img id="photo" src="" alt="Person photo">
+    </div>
+    <div class="choices">
+      <button id="btn-goy" class="btn-choice btn-goy">Goy</button>
+      <button id="btn-jew" class="btn-choice btn-jew">Jew</button>
+    </div>
+  </div>
+
+  <!-- Results Screen -->
+  <div id="results-screen" class="screen">
+    <p id="final-score" class="final-score">0 / 10</p>
+    <p id="score-label" class="score-label"></p>
+    <div id="results-list" class="results-list"></div>
+    <button id="btn-play-again" class="btn btn-play">Play Again</button>
+  </div>
+
+  <!-- Feedback Overlay -->
+  <div id="feedback" class="feedback"></div>
+
+  <script src="data.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

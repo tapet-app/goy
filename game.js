@@ -4,9 +4,9 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 // --- State ---
-let rounds = [];      // selected rounds for this game
+let rounds = [];
 let currentRound = 0;
-let results = [];     // { imageUrl, guess, answer, correct }
+let results = [];
 
 // --- DOM refs ---
 const startScreen   = $("#start-screen");
@@ -21,9 +21,33 @@ const btnJew        = $("#btn-jew");
 
 const roundCounter  = $("#round-counter");
 const photoImg      = $("#photo");
+const photoLoader   = $("#photo-loader");
+const personName    = $("#person-name");
 const finalScore    = $("#final-score");
 const scoreLabel    = $("#score-label");
 const resultsList   = $("#results-list");
+
+// --- Wikipedia image cache ---
+const imageCache = {};
+
+async function fetchWikiImage(name) {
+  if (imageCache[name]) return imageCache[name];
+
+  // Clean name for Wikipedia lookup (remove parenthetical disambiguation)
+  const wikiTitle = name.replace(/ \(.*\)$/, "");
+  const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Not found");
+    const data = await res.json();
+    const imgUrl = data.thumbnail?.source || null;
+    if (imgUrl) imageCache[name] = imgUrl;
+    return imgUrl;
+  } catch {
+    return null;
+  }
+}
 
 // --- Helpers ---
 
@@ -61,12 +85,49 @@ function startGame() {
   loadRound();
 }
 
-function loadRound() {
+async function loadRound() {
   const r = rounds[currentRound];
   roundCounter.textContent = `${currentRound + 1} / ${ROUNDS_PER_GAME}`;
-  photoImg.src = r.imageUrl;
-  btnGoy.disabled = false;
-  btnJew.disabled = false;
+
+  // Reset UI
+  btnGoy.disabled = true;
+  btnJew.disabled = true;
+  personName.textContent = "";
+  personName.classList.remove("visible");
+  photoImg.classList.remove("visible");
+  photoLoader.classList.add("visible");
+
+  // Fetch image
+  const imgUrl = await fetchWikiImage(r.name);
+  photoImg.src = imgUrl || "";
+  photoImg.alt = r.name;
+
+  if (imgUrl) {
+    photoImg.onload = () => {
+      photoLoader.classList.remove("visible");
+      photoImg.classList.add("visible");
+      btnGoy.disabled = false;
+      btnJew.disabled = false;
+    };
+    photoImg.onerror = () => {
+      photoLoader.classList.remove("visible");
+      photoImg.classList.add("visible");
+      btnGoy.disabled = false;
+      btnJew.disabled = false;
+    };
+  } else {
+    // No image found — skip this person, try next
+    rounds.splice(currentRound, 1, shuffle(PEOPLE.filter(p => !rounds.includes(p)))[0] || rounds[currentRound]);
+    photoLoader.classList.remove("visible");
+    photoImg.classList.add("visible");
+    btnGoy.disabled = false;
+    btnJew.disabled = false;
+  }
+
+  // Preload next round image
+  if (currentRound + 1 < ROUNDS_PER_GAME) {
+    fetchWikiImage(rounds[currentRound + 1].name);
+  }
 }
 
 function handleGuess(guess) {
@@ -76,12 +137,18 @@ function handleGuess(guess) {
   const r = rounds[currentRound];
   const correct = guess === r.answer;
   results.push({
-    imageUrl: r.imageUrl,
+    name: r.name,
     guess,
     answer: r.answer,
     correct,
+    imageUrl: photoImg.src,
   });
-  showFeedback(correct);
+
+  // Show name
+  personName.textContent = r.name;
+  personName.classList.add("visible");
+
+  setTimeout(() => showFeedback(correct), 600);
 }
 
 function nextRound() {
@@ -96,7 +163,8 @@ function nextRound() {
 function showResults() {
   const score = results.filter((r) => r.correct).length;
   finalScore.textContent = `${score} / ${ROUNDS_PER_GAME}`;
-  scoreLabel.textContent = score >= 8 ? "Impressive!" : score >= 5 ? "Not bad!" : "Better luck next time!";
+  scoreLabel.textContent =
+    score >= 8 ? "Impressive!" : score >= 5 ? "Not bad!" : "Better luck next time!";
 
   resultsList.innerHTML = "";
   results.forEach((r, i) => {
@@ -104,10 +172,11 @@ function showResults() {
     row.className = "result-row " + (r.correct ? "correct-row" : "wrong-row");
     row.innerHTML = `
       <span class="round-num">${i + 1}</span>
-      <img src="${r.imageUrl}" alt="Round ${i + 1}">
+      <img src="${r.imageUrl}" alt="${r.name}">
       <div class="guess-info">
-        <span class="label">You said:</span> ${r.guess}<br>
-        <span class="label">Answer:</span> ${r.answer}
+        <strong>${r.name}</strong><br>
+        <span class="label">You said:</span> ${r.guess}
+        <span class="label">| Answer:</span> ${r.answer}
       </div>
       <span class="result-icon">${r.correct ? "&#10003;" : "&#10007;"}</span>
     `;

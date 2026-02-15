@@ -84,6 +84,11 @@ body {
   margin-bottom: 24px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   width: 100%;
+  min-height: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .photo-card img {
@@ -91,8 +96,36 @@ body {
   height: 220px;
   object-fit: cover;
   border-radius: 12px;
+  display: none;
+}
+
+.photo-card img.visible {
   display: block;
-  margin: 0 auto;
+}
+
+.photo-loader {
+  display: none;
+  color: #aaa;
+  font-size: 1rem;
+  padding: 90px 0;
+}
+
+.photo-loader.visible {
+  display: block;
+}
+
+.person-name {
+  margin-top: 12px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.3s;
+  min-height: 1.4em;
+}
+
+.person-name.visible {
+  opacity: 1;
 }
 
 .choices {
@@ -116,12 +149,17 @@ body {
   transform: scale(0.96);
 }
 
+.btn-choice:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .btn-goy {
   background: #0f3460;
   color: #fff;
 }
 
-.btn-goy:hover {
+.btn-goy:hover:not(:disabled) {
   background: #154785;
 }
 
@@ -130,7 +168,7 @@ body {
   color: #fff;
 }
 
-.btn-jew:hover {
+.btn-jew:hover:not(:disabled) {
   background: #6b44a8;
 }
 
